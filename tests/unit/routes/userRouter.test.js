@@ -20,6 +20,12 @@ test('get me with a valid user', async () => {
   expect(meRes.body).toMatchObject(expectedUser);
 });
 
+test('get me without authentication is rejected', async () => {
+  const meRes = await request(app).get('/api/user/me');
+  expect(meRes.status).toBe(401);
+  expect(meRes.body.message).toBe('unauthorized');
+});
+
 function expectValidJwt(potentialJwt) {
   expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
 }
