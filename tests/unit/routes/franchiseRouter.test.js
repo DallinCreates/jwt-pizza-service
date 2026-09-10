@@ -73,3 +73,25 @@ test('a normal authenticated user cannot create a franchise', async () => {
   expect(res.status).toBe(403);
   expect(res.body.message).toBe('unable to create a franchise');
 });
+
+test('an admin can delete a franchise', async () => {
+  const admin = await createAdminUser();
+  const adminToken = await loginUser(admin);
+
+  const createRes = await request(app)
+    .post('/api/franchise')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({ name: randomName(), admins: [{ email: admin.email }] });
+  const franchiseId = createRes.body.id;
+
+  const deleteRes = await request(app)
+    .delete(`/api/franchise/${franchiseId}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  expect(deleteRes.status).toBe(200);
+  expect(deleteRes.body.message).toBe('franchise deleted');
+
+  // it should no longer show up in the franchise list
+  const listRes = await request(app).get(`/api/franchise?name=${createRes.body.name}`);
+  expect(listRes.body.franchises.find((f) => f.id === franchiseId)).toBeUndefined();
+});
