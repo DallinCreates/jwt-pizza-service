@@ -1,12 +1,13 @@
 const request = require('supertest');
 const app = require('@src/service.js');
+const { randomName, createAdminUser, loginUser } = require('../../testUtils');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
 let testUserId;
 
 beforeAll(async () => {
-  testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
+  testUser.email = randomName() + '@test.com';
   const registerRes = await request(app).post('/api/auth').send(testUser);
   testUserAuthToken = registerRes.body.token;
   testUserId = registerRes.body.user.id;
@@ -45,4 +46,30 @@ test('an unauthenticated user cannot get user franchises', async () => {
 
   expect(res.status).toBe(401);
   expect(res.body.message).toBe('unauthorized');
+});
+
+test('an admin can create a franchise', async () => {
+  const admin = await createAdminUser();
+  const adminToken = await loginUser(admin);
+
+  const newFranchise = { name: randomName(), admins: [{ email: admin.email }] };
+  const res = await request(app)
+    .post('/api/franchise')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send(newFranchise);
+
+  expect(res.status).toBe(200);
+  expect(res.body).toMatchObject({ name: newFranchise.name });
+  expect(res.body.id).toBeDefined();
+});
+
+test('a normal authenticated user cannot create a franchise', async () => {
+  const newFranchise = { name: randomName(), admins: [{ email: testUser.email }] };
+  const res = await request(app)
+    .post('/api/franchise')
+    .set('Authorization', `Bearer ${testUserAuthToken}`)
+    .send(newFranchise);
+
+  expect(res.status).toBe(403);
+  expect(res.body.message).toBe('unable to create a franchise');
 });

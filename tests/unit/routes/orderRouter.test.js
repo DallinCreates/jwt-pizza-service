@@ -1,21 +1,7 @@
 const request = require('supertest');
 const app = require('@src/service.js');
-const { DB, Role } = require('@src/database/database.js');
-
-function randomName() {
-  return Math.random().toString(36).substring(2, 12);
-}
-
-async function createAdminUser() {
-  const user = { name: randomName(), email: randomName() + '@admin.com', password: 'toomanysecrets', roles: [{ role: Role.Admin }] };
-  await DB.addUser(user);
-  return { ...user, password: 'toomanysecrets' };
-}
-
-async function loginUser(user) {
-  const res = await request(app).put('/api/auth').send({ email: user.email, password: user.password });
-  return res.body.token;
-}
+const { DB } = require('@src/database/database.js');
+const { randomName, createAdminUser, loginUser } = require('../../testUtils');
 
 const dinerUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let dinerToken;
