@@ -82,6 +82,27 @@ describe('create order', () => {
     expect(orderRes.body.order.id).toBeDefined();
   });
 
+  test('returns 500 when the factory fails to fulfill the order', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      json: async () => ({ reportUrl: 'http://factory/report/fail' }),
+    });
+
+    const orderReq = {
+      franchiseId: 1,
+      storeId: 1,
+      items: [{ menuId: menuItemId, description: 'veggie', price: 0.0038 }],
+    };
+    const orderRes = await request(app)
+      .post('/api/order')
+      .set('Authorization', `Bearer ${dinerToken}`)
+      .send(orderReq);
+
+    expect(orderRes.status).toBe(500);
+    expect(orderRes.body.message).toBe('Failed to fulfill order at factory');
+    expect(orderRes.body.followLinkToEndChaos).toBe('http://factory/report/fail');
+  });
+
   test('an unauthenticated user cannot create an order', async () => {
     const fetchSpy = jest.spyOn(global, 'fetch');
 
