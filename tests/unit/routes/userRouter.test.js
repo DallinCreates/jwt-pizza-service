@@ -3,11 +3,13 @@ const app = require('@src/service.js');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
+let testUserId;
 
 beforeAll(async () => {
   testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
   const registerRes = await request(app).post('/api/auth').send(testUser);
   testUserAuthToken = registerRes.body.token;
+  testUserId = registerRes.body.user.id;
   expectValidJwt(testUserAuthToken);
 });
 
@@ -24,6 +26,23 @@ test('get me without authentication is rejected', async () => {
   const meRes = await request(app).get('/api/user/me');
   expect(meRes.status).toBe(401);
   expect(meRes.body.message).toBe('unauthorized');
+});
+
+test('update user changes the name and leaves everything else the same', async () => {
+  const newName = 'renamed diner';
+  const updateRes = await request(app)
+    .put(`/api/user/${testUserId}`)
+    .set('Authorization', `Bearer ${testUserAuthToken}`)
+    .send({ name: newName, email: testUser.email, password: testUser.password });
+
+  expect(updateRes.status).toBe(200);
+  expect(updateRes.body.user).toMatchObject({
+    id: testUserId,
+    name: newName,
+    email: testUser.email,
+    roles: [{ role: 'diner' }],
+  });
+  expectValidJwt(updateRes.body.token);
 });
 
 function expectValidJwt(potentialJwt) {
