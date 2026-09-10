@@ -111,3 +111,20 @@ describe('create order', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+test('an authenticated user can get their orders', async () => {
+  const ordersRes = await request(app)
+    .get('/api/order')
+    .set('Authorization', `Bearer ${dinerToken}`);
+
+  expect(ordersRes.status).toBe(200);
+  expect(ordersRes.body).toHaveProperty('dinerId');
+  expect(Array.isArray(ordersRes.body.orders)).toBe(true);
+  expect(ordersRes.body).toHaveProperty('page');
+});
+
+test('an unauthenticated user cannot get orders', async () => {
+  const ordersRes = await request(app).get('/api/order');
+  expect(ordersRes.status).toBe(401);
+  expect(ordersRes.body.message).toBe('unauthorized');
+});
