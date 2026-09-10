@@ -42,6 +42,14 @@ test('login', async () => {
   expect(loginRes.body.user).toMatchObject(expectedUser);
 });
 
+test('login with wrong password does not return a token', async () => {
+  const loginRes = await request(app)
+    .put('/api/auth')
+    .send({ email: testUser.email, password: 'wrong-password' });
+  expect(loginRes.status).not.toBe(200);
+  expect(loginRes.body.token).toBeUndefined();
+});
+
 function expectValidJwt(potentialJwt) {
   expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
 }
