@@ -1,6 +1,8 @@
 {
   "collectCoverage": true,
   "coverageReporters": ["json-summary", "text"],
+  "testTimeout": 15000,
+  "maxWorkers": 1,
   "coverageThreshold": {
     "global": {
       "lines": 80
