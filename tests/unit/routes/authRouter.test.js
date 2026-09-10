@@ -50,6 +50,34 @@ test('login with wrong password does not return a token', async () => {
   expect(loginRes.body.token).toBeUndefined();
 });
 
+test('register, login, and logout a user', async () => {
+  const user = {
+    name: 'lifecycle diner',
+    email: Math.random().toString(36).substring(2, 12) + '@test.com',
+    password: 'c',
+  };
+
+  // create the user
+  const registerRes = await request(app).post('/api/auth').send(user);
+  expect(registerRes.status).toBe(200);
+  expectValidJwt(registerRes.body.token);
+
+  // log that user in
+  const loginRes = await request(app).put('/api/auth').send(user);
+  expect(loginRes.status).toBe(200);
+  expectValidJwt(loginRes.body.token);
+  const authToken = loginRes.body.token;
+
+  // log the user out
+  const logoutRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${authToken}`);
+  expect(logoutRes.status).toBe(200);
+  expect(logoutRes.body.message).toBe('logout successful');
+
+  // the token should no longer be valid for authenticated requests
+  const secondLogoutRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${authToken}`);
+  expect(secondLogoutRes.status).toBe(401);
+});
+
 function expectValidJwt(potentialJwt) {
   expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
 }
