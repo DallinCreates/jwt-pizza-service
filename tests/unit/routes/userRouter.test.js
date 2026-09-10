@@ -63,6 +63,16 @@ test('user cannot change their email to another user\'s email', async () => {
   expect(updateRes.status).not.toBe(200);
 });
 
+test('user cannot update another user\'s information', async () => {
+  const updateRes = await request(app)
+    .put(`/api/user/${otherUserId}`)
+    .set('Authorization', `Bearer ${testUserAuthToken}`)
+    .send({ name: 'hijacked name', email: otherUser.email, password: otherUser.password });
+
+  expect(updateRes.status).toBe(403);
+  expect(updateRes.body.message).toBe('unauthorized');
+});
+
 function expectValidJwt(potentialJwt) {
   expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
 }
