@@ -19,11 +19,15 @@ async function loginUser(user) {
 
 const dinerUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let dinerToken;
+let menuItemId;
 
 beforeAll(async () => {
   dinerUser.email = randomName() + '@test.com';
   const registerRes = await request(app).post('/api/auth').send(dinerUser);
   dinerToken = registerRes.body.token;
+
+  const item = await DB.addMenuItem({ title: randomName(), description: 'veggie', image: 'pizza1.png', price: 0.0038 });
+  menuItemId = item.id;
 });
 
 test('get menu returns the pizza menu', async () => {
@@ -58,4 +62,52 @@ test('a non-admin user cannot add a menu item', async () => {
 
   expect(addRes.status).toBe(403);
   expect(addRes.body.message).toBe('unable to add menu item');
+});
+
+describe('create order', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('an authenticated user can create an order', async () => {
+    // The route calls out to the pizza factory -- stub that network call.
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ reportUrl: 'http://factory/report/1', jwt: 'factory-jwt' }),
+    });
+
+    const orderReq = {
+      franchiseId: 1,
+      storeId: 1,
+      items: [{ menuId: menuItemId, description: 'veggie', price: 0.0038 }],
+    };
+    const orderRes = await request(app)
+      .post('/api/order')
+      .set('Authorization', `Bearer ${dinerToken}`)
+      .send(orderReq);
+
+    expect(orderRes.status).toBe(200);
+    expect(orderRes.body.jwt).toBe('factory-jwt');
+    expect(orderRes.body.order).toMatchObject({
+      franchiseId: 1,
+      storeId: 1,
+      items: [{ menuId: menuItemId, description: 'veggie', price: 0.0038 }],
+    });
+    expect(orderRes.body.order.id).toBeDefined();
+  });
+
+  test('an unauthenticated user cannot create an order', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch');
+
+    const orderReq = {
+      franchiseId: 1,
+      storeId: 1,
+      items: [{ menuId: menuItemId, description: 'veggie', price: 0.0038 }],
+    };
+    const orderRes = await request(app).post('/api/order').send(orderReq);
+
+    expect(orderRes.status).toBe(401);
+    expect(orderRes.body.message).toBe('unauthorized');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });
