@@ -1,5 +1,6 @@
 const request = require('supertest');
 const app = require('@src/service.js');
+const { expectValidJwt } = require('../../testUtils');
 
 const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
@@ -92,7 +93,3 @@ test('register, login, and logout a user', async () => {
   const secondLogoutRes = await request(app).delete('/api/auth').set('Authorization', `Bearer ${authToken}`);
   expect(secondLogoutRes.status).toBe(401);
 });
-
-function expectValidJwt(potentialJwt) {
-  expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
-}

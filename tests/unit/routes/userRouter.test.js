@@ -1,24 +1,15 @@
 const request = require('supertest');
 const app = require('@src/service.js');
+const { registerUser, expectValidJwt } = require('../../testUtils');
 
-const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
-let testUserAuthToken;
-let testUserId;
-
-const otherUser = { name: 'other diner', email: 'other@test.com', password: 'b' };
-let otherUserId;
+let testUser, testUserAuthToken, testUserId;
+let otherUser, otherUserId;
 
 beforeAll(async () => {
-  testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-  const registerRes = await request(app).post('/api/auth').send(testUser);
-  testUserAuthToken = registerRes.body.token;
-  testUserId = registerRes.body.user.id;
+  ({ user: testUser, token: testUserAuthToken, id: testUserId } = await registerUser());
   expectValidJwt(testUserAuthToken);
 
-  otherUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
-  const otherRes = await request(app).post('/api/auth').send(otherUser);
-  otherUserId = otherRes.body.user.id;
-  expectValidJwt(otherRes.body.token);
+  ({ user: otherUser, id: otherUserId } = await registerUser());
 });
 
 test('get me with a valid user', async () => {
@@ -72,7 +63,3 @@ test('user cannot update another user\'s information', async () => {
   expect(updateRes.status).toBe(403);
   expect(updateRes.body.message).toBe('unauthorized');
 });
-
-function expectValidJwt(potentialJwt) {
-  expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
-}

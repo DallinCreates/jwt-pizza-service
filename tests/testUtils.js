@@ -38,6 +38,10 @@ async function loginUser(user) {
   return res.body.token;
 }
 
+function expectValidJwt(potentialJwt) {
+  expect(potentialJwt).toMatch(/^[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*\.[a-zA-Z0-9\-_]*$/);
+}
+
 module.exports = {
   DEFAULT_PASSWORD,
   randomName,
@@ -46,4 +50,5 @@ module.exports = {
   createAdminUser,
   registerUser,
   loginUser,
+  expectValidJwt,
 };
