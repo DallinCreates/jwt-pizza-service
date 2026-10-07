@@ -157,3 +157,22 @@ test('admin deletes a user', async () => {
     .set('Authorization', 'Bearer ' + adminToken);
   expect(listRes.body.users).toEqual([]);
 });
+
+test('delete user without authentication is rejected', async () => {
+  const deleteRes = await request(app).delete(`/api/user/${otherUserId}`);
+  expect(deleteRes.status).toBe(401);
+});
+
+test('diner cannot delete a user', async () => {
+  const { id: victimId, user: victim } = await registerUser();
+
+  const deleteRes = await request(app)
+    .delete(`/api/user/${victimId}`)
+    .set('Authorization', 'Bearer ' + testUserAuthToken);
+  expect(deleteRes.status).toBe(403);
+  expect(deleteRes.body.message).toBe('unauthorized');
+
+  // The victim is untouched and can still log in.
+  const loginRes = await request(app).put('/api/auth').send({ email: victim.email, password: victim.password });
+  expect(loginRes.status).toBe(200);
+});
