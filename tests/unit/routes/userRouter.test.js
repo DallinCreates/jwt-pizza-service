@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('@src/service.js');
-const { registerUser, createAdminUser, loginUser, expectValidJwt } = require('../../testUtils');
+const { registerUser, createAdminUser, loginUser, randomName, expectValidJwt } = require('../../testUtils');
 
 let testUser, testUserAuthToken, testUserId;
 let otherUser, otherUserId;
@@ -112,4 +112,24 @@ test('list users pages through results with limit and more', async () => {
   const page1Ids = page1Res.body.users.map((u) => u.id);
   const page2Ids = page2Res.body.users.map((u) => u.id);
   expect(page2Ids.some((id) => page1Ids.includes(id))).toBe(false);
+});
+
+test('list users filters by name with wildcards', async () => {
+  const admin = await createAdminUser();
+  const adminToken = await loginUser(admin);
+  const uniqueName = `filter-${randomName()}`;
+  const { id: filteredUserId } = await registerUser({ name: uniqueName });
+
+  const matchRes = await request(app)
+    .get(`/api/user?name=*${uniqueName.substring(3, 12)}*`)
+    .set('Authorization', 'Bearer ' + adminToken);
+  expect(matchRes.status).toBe(200);
+  expect(matchRes.body.users).toEqual([expect.objectContaining({ id: filteredUserId, name: uniqueName })]);
+  expect(matchRes.body.more).toBe(false);
+
+  const noMatchRes = await request(app)
+    .get(`/api/user?name=${uniqueName}-nobody`)
+    .set('Authorization', 'Bearer ' + adminToken);
+  expect(noMatchRes.status).toBe(200);
+  expect(noMatchRes.body.users).toEqual([]);
 });
