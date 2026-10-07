@@ -91,3 +91,25 @@ test('list users as admin returns users without passwords', async () => {
     expect(user).toEqual({ id: expect.any(Number), name: expect.any(String), email: expect.any(String), roles: expect.any(Array) });
   }
 });
+
+test('list users pages through results with limit and more', async () => {
+  const admin = await createAdminUser();
+  const adminToken = await loginUser(admin);
+
+  const page1Res = await request(app)
+    .get('/api/user?page=1&limit=2')
+    .set('Authorization', 'Bearer ' + adminToken);
+  expect(page1Res.status).toBe(200);
+  expect(page1Res.body.users).toHaveLength(2);
+  expect(page1Res.body.more).toBe(true);
+
+  const page2Res = await request(app)
+    .get('/api/user?page=2&limit=2')
+    .set('Authorization', 'Bearer ' + adminToken);
+  expect(page2Res.status).toBe(200);
+  expect(page2Res.body.users).toHaveLength(2);
+
+  const page1Ids = page1Res.body.users.map((u) => u.id);
+  const page2Ids = page2Res.body.users.map((u) => u.id);
+  expect(page2Ids.some((id) => page1Ids.includes(id))).toBe(false);
+});
