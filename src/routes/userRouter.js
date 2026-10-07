@@ -86,9 +86,17 @@ userRouter.get(
       return res.status(403).json({ message: 'unauthorized' });
     }
 
-    const users = await DB.getUsers();
-    res.json({ users, more: false });
+    const page = parsePositiveInt(req.query.page, 1);
+    const limit = parsePositiveInt(req.query.limit, 10);
+    const [users, more] = await DB.getUsers(page, limit);
+    res.json({ users, more });
   })
 );
+
+// Only whole numbers ever reach the LIMIT/OFFSET in the SQL.
+function parsePositiveInt(value, defaultValue) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : defaultValue;
+}
 
 module.exports = userRouter;
