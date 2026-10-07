@@ -88,7 +88,8 @@ userRouter.get(
 
     const page = parsePositiveInt(req.query.page, 1);
     const limit = parsePositiveInt(req.query.limit, 10);
-    const [users, more] = await DB.getUsers(page, limit);
+    const nameFilter = typeof req.query.name === 'string' ? req.query.name : '*';
+    const [users, more] = await DB.getUsers(page, limit, nameFilter);
     res.json({ users, more });
   })
 );
