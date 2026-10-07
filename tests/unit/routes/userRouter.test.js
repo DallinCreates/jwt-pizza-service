@@ -133,3 +133,27 @@ test('list users filters by name with wildcards', async () => {
   expect(noMatchRes.status).toBe(200);
   expect(noMatchRes.body.users).toEqual([]);
 });
+
+test('admin deletes a user', async () => {
+  const admin = await createAdminUser();
+  const adminToken = await loginUser(admin);
+  const uniqueName = `delete-${randomName()}`;
+  const { user: doomedUser, token: doomedToken, id: doomedId } = await registerUser({ name: uniqueName });
+
+  const deleteRes = await request(app)
+    .delete(`/api/user/${doomedId}`)
+    .set('Authorization', 'Bearer ' + adminToken);
+  expect(deleteRes.status).toBe(200);
+  expect(deleteRes.body.message).toBe('user deleted');
+
+  // The deleted user can no longer log in, and their old token no longer works.
+  const loginRes = await request(app).put('/api/auth').send({ email: doomedUser.email, password: doomedUser.password });
+  expect(loginRes.status).toBe(404);
+  const meRes = await request(app).get('/api/user/me').set('Authorization', 'Bearer ' + doomedToken);
+  expect(meRes.status).toBe(401);
+
+  const listRes = await request(app)
+    .get(`/api/user?name=${uniqueName}`)
+    .set('Authorization', 'Bearer ' + adminToken);
+  expect(listRes.body.users).toEqual([]);
+});
