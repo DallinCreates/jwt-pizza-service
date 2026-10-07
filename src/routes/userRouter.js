@@ -37,7 +37,16 @@ userRouter.docs = [
           roles: [{ role: 'admin' }],
         },
       ],
+      more: false,
     },
+  },
+  {
+    method: 'DELETE',
+    path: '/api/user/:userId',
+    requiresAuth: true,
+    description: 'Deletes a user. Only admins may delete users.',
+    example: `curl -X DELETE localhost:3000/api/user/3 -H 'Authorization: Bearer tttttt'`,
+    response: { message: 'user deleted' },
   },
 ];
 
