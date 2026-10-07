@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('@src/service.js');
-const { registerUser, expectValidJwt } = require('../../testUtils');
+const { registerUser, createAdminUser, loginUser, expectValidJwt } = require('../../testUtils');
 
 let testUser, testUserAuthToken, testUserId;
 let otherUser, otherUserId;
@@ -75,4 +75,18 @@ test('list users', async () => {
     .get('/api/user')
     .set('Authorization', 'Bearer ' + userToken);
   expect(listUsersRes.status).toBe(200);
+});
+
+test('list users as admin returns users without passwords', async () => {
+  const admin = await createAdminUser();
+  const adminToken = await loginUser(admin);
+  const listUsersRes = await request(app)
+    .get('/api/user')
+    .set('Authorization', 'Bearer ' + adminToken);
+
+  expect(listUsersRes.status).toBe(200);
+  expect(listUsersRes.body.users.length).toBeGreaterThan(0);
+  for (const user of listUsersRes.body.users) {
+    expect(user).toEqual({ id: expect.any(Number), name: expect.any(String), email: expect.any(String), roles: expect.any(Array) });
+  }
 });
