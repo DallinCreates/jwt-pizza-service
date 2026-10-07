@@ -82,7 +82,8 @@ userRouter.get(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
-    res.json({ message: 'not implemented', users: [], more: false });
+    const users = await DB.getUsers();
+    res.json({ users, more: false });
   })
 );
 
