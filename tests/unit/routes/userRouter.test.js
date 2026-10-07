@@ -69,12 +69,13 @@ test('list users unauthorized', async () => {
   expect(listUsersRes.status).toBe(401);
 });
 
-test('list users', async () => {
+test('list users as a diner is forbidden', async () => {
   const { token: userToken } = await registerUser();
   const listUsersRes = await request(app)
     .get('/api/user')
     .set('Authorization', 'Bearer ' + userToken);
-  expect(listUsersRes.status).toBe(200);
+  expect(listUsersRes.status).toBe(403);
+  expect(listUsersRes.body.message).toBe('unauthorized');
 });
 
 test('list users as admin returns users without passwords', async () => {
